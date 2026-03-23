@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Buckeye Manufacturing 401(k) Enrollment Simulation</title>
+  <style>
+    :root {
+      --bg1: #eef3f8;
+      --bg2: #dfe8f2;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #d7dee7;
+      --brand: #1d4ed8;
+      --brand-dark: #163ea8;
+      --accent: #0f766e;
+      --warn: #b45309;
+      --good: #166534;
+      --bad: #b91c1c;
+      --shadow: 0 18px 45px rgba(17, 24, 39, 0.12);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, var(--bg1), var(--bg2));
+      min-height: 100vh;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 28px;
+      background: rgba(255,255,255,0.82);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(215, 222, 231, 0.9);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .brand-wrap { display: flex; align-items: center; gap: 14px; }
+    .brand-mark {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: grid; place-items: center;
+      background: linear-gradient(135deg, var(--brand), #3b82f6);
+      color: white; font-weight: bold; font-size: 22px;
+      box-shadow: 0 10px 25px rgba(29,78,216,0.28);
+    }
+    .brand-title { font-weight: 700; font-size: 1.05rem; }
+    .brand-subtitle { color: var(--muted); font-size: 0.92rem; }
+    .secure-pill {
+      background: #eff6ff; color: var(--brand-dark); border: 1px solid #bfdbfe;
+      padding: 10px 14px; border-radius: 999px; font-size: 0.9rem; font-weight: 700;
+    }
+
+    .shell { max-width: 1120px; margin: 28px auto; padding: 0 20px 36px; }
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    .hero-card, .content-card {
+      background: rgba(255,255,255,0.95);
+      border: 1px solid rgba(215, 222, 231, 0.95);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card {
+      display: grid;
+      grid-template-columns: 1.2fr 0.9fr;
+      gap: 26px;
+      padding: 34px;
+      align-items: stretch;
+    }
+
+    .eyebrow {
+      color: var(--brand);
+      font-size: 0.83rem;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+    h1, h2, h3 { margin-top: 0; }
+    h1 { font-size: 2.35rem; margin-bottom: 12px; }
+    .hero-copy p { color: var(--muted); font-size: 1.03rem; line-height: 1.6; }
+    .hero-list {
+      margin: 20px 0 26px; padding-left: 18px; color: var(--text); line-height: 1.8;
+    }
+    .hero-panel { display: flex; flex-direction: column; gap: 18px; }
+    .panel-card, .notice-box, .summary-box, .metric-card, .fund-card, .info-box {
+      background: white; border: 1px solid var(--line); border-radius: var(--radius);
+    }
+    .panel-card { padding: 22px; }
+    .mini-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;
+    }
+    .mini-grid > div {
+      background: #f8fafc; padding: 14px; border-radius: 14px; border: 1px solid #e5ebf2;
+    }
+    .mini-label {
+      display: block; color: var(--muted); font-size: 0.84rem; margin-bottom: 6px;
+    }
+    .notice-box {
+      padding: 18px 20px; background: #f8fafc; color: #334155; line-height: 1.5;
+    }
+
+    .content-card { padding: 30px; }
+    .step-header {
+      display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px;
+    }
+    .step-indicator {
+      font-size: 0.92rem; color: var(--muted); font-weight: 700;
+      background: #f8fafc; border: 1px solid var(--line); padding: 8px 12px; border-radius: 999px;
+    }
+
+    .progress { height: 10px; background: #e5ebf2; border-radius: 999px; overflow: hidden; margin: 0 0 26px; }
+    .progress-bar { height: 100%; background: linear-gradient(90deg, var(--brand), #60a5fa); width: 0; transition: width .25s ease; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+    label { display: block; font-weight: 700; margin-bottom: 8px; }
+    input, select {
+      width: 100%; padding: 13px 14px; border-radius: 12px; border: 1px solid #cfd8e3;
+      font-size: 1rem; background: #fff;
+    }
+    input:focus, select:focus { outline: 3px solid rgba(59,130,246,.16); border-color: #60a5fa; }
+    .muted { color: var(--muted); font-size: 0.94rem; }
+
+    .btn-row {
+      display: flex; justify-content: space-between; gap: 12px; margin-top: 28px; flex-wrap: wrap;
+    }
+    .btn {
+      border: none; border-radius: 14px; padding: 13px 18px; cursor: pointer; font-weight: 700; font-size: 0.98rem;
+    }
+    .btn-primary { background: linear-gradient(135deg, var(--brand), #3b82f6); color: white; }
+    .btn-primary:hover { background: linear-gradient(135deg, var(--brand-dark), var(--brand)); }
+    .btn-secondary { background: white; border: 1px solid var(--line); color: #334155; }
+    .btn-secondary:hover { background: #f8fafc; }
+
+    .choice-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .choice-card {
+      border: 1px solid var(--line); border-radius: 16px; padding: 18px; cursor: pointer;
+      background: #fff; transition: .18s ease;
+    }
+    .choice-card.selected { border-color: #60a5fa; box-shadow: 0 0 0 3px rgba(96,165,250,.18); background: #f8fbff; }
+    .choice-card h3 { margin-bottom: 8px; }
+    .choice-card p { color: var(--muted); line-height: 1.5; margin-bottom: 0; }
+
+    .slider-wrap {
+      background: #f8fafc; border: 1px solid var(--line); border-radius: 16px; padding: 20px;
+    }
+    input[type="range"] { width: 100%; }
+    .range-value { font-size: 2rem; font-weight: 800; color: var(--brand); }
+
+    .metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 18px; }
+    .metric-card { padding: 18px; }
+    .metric-card .label { color: var(--muted); font-size: 0.9rem; margin-bottom: 8px; }
+    .metric-card .value { font-size: 1.55rem; font-weight: 800; }
+
+    .fund-list { display: grid; gap: 14px; margin-top: 18px; }
+    .fund-card { padding: 18px; }
+    .fund-card-top { display: flex; justify-content: space-between; gap: 16px; align-items: start; }
+    .fund-card h3 { margin-bottom: 6px; font-size: 1.02rem; }
+    .fund-card p { color: var(--muted); margin: 0; line-height: 1.45; }
+    .alloc-wrap { min-width: 130px; }
+    .alloc-wrap input { text-align: center; font-weight: 700; }
+
+    .status-box, .score-box {
+      padding: 16px 18px; border-radius: 16px; border: 1px solid var(--line); margin-top: 18px; background: #f8fafc;
+    }
+    .status-box.good { border-color: #bbf7d0; background: #f0fdf4; color: var(--good); }
+    .status-box.warn { border-color: #fde68a; background: #fffbeb; color: var(--warn); }
+    .status-box.bad { border-color: #fecaca; background: #fef2f2; color: var(--bad); }
+
+    .summary-layout { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 20px; }
+    .summary-box { padding: 22px; }
+    .summary-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    .summary-table td { padding: 12px 0; border-bottom: 1px solid #e9eef4; }
+    .summary-table td:last-child { text-align: right; font-weight: 700; }
+    .big-value { font-size: 2rem; font-weight: 800; color: var(--brand); }
+    .small-note { color: var(--muted); font-size: 0.9rem; line-height: 1.5; }
+
+    .print-note { margin-top: 18px; color: var(--muted); }
+
+    @media (max-width: 900px) {
+      .hero-card, .summary-layout, .grid-2, .choice-row, .metric-grid { grid-template-columns: 1fr; }
+      .grid-3 { grid-template-columns: 1fr; }
+      h1 { font-size: 1.95rem; }
+    }
+
+    @media print {
+      .topbar, .btn-row, .progress, .step-indicator { display: none !important; }
+      body { background: #fff; }
+      .screen { display: none !important; }
+      #screen5 { display: block !important; }
+      .content-card, .summary-box { box-shadow: none; border: 1px solid #ccc; }
+      .shell { margin: 0; max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand-wrap">
+      <div class="brand-mark">B</div>
+      <div>
+        <div class="brand-title">Buckeye Manufacturing</div>
+        <div class="brand-subtitle">Retirement Benefits Enrollment Simulation</div>
+      </div>
+    </div>
+    <div class="secure-pill">Secure Demo Portal</div>
+  </div>
+
+  <main class="shell">
+    <section id="screen1" class="screen active">
+      <div class="hero-card">
+        <div class="hero-copy">
+          <div class="eyebrow">New hire benefits enrollment</div>
+          <h1>401(k) Enrollment Simulation</h1>
+          <p>
+            This classroom simulation walks students through the same types of choices a real employee might make when signing up for a company retirement plan.
+          </p>
+          <ul class="hero-list">
+            <li>Choose a contribution rate</li>
+            <li>Compare Traditional and Roth 401(k)</li>
+            <li>Select investments inside the plan</li>
+            <li>See how employer match changes long-term savings</li>
+          </ul>
+          <button class="btn btn-primary" onclick="showScreen(2)">Begin Enrollment</button>
+        </div>
+        <div class="hero-panel">
+          <div class="panel-card">
+            <h3>Sample Plan Highlights</h3>
+            <div class="mini-grid">
+              <div>
+                <span class="mini-label">Employer Match</span>
+                <strong>100% of first 4%</strong>
+              </div>
+              <div>
+                <span class="mini-label">Vesting</span>
+                <strong>Immediate</strong>
+              </div>
+              <div>
+                <span class="mini-label">Fund Menu</span>
+                <strong>6 simplified choices</strong>
+              </div>
+              <div>
+                <span class="mini-label">Projection</span>
+                <strong>Estimated to age 65</strong>
+              </div>
+            </div>
+          </div>
+          <div class="notice-box">
+            <strong>Teacher Note:</strong> This uses fictional branding and simplified investment choices so students can focus on major decisions instead of benefits jargon.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen2" class="screen">
+      <div class="content-card">
+        <div class="step-header">
+          <div>
+            <div class="eyebrow">Employee profile</div>
+            <h2>Tell us about the employee</h2>
+          </div>
+          <div class="step-indicator">Step 1 of 4</div>
+        </div>
+        <div class="progress"><div class="progress-bar" style="width:25%"></div></div>
+        <div class="grid-2">
+          <div>
+            <label for="name">Employee Name</label>
+            <input id="name" type="text" placeholder="Jordan Smith" />
+          </div>
+          <div>
+            <label for="age">Current Age</label>
+            <input id="age" type="number" min="18" max="70" value="22" />
+          </div>
+          <div>
+            <label for="salary">Annual Salary</label>
+            <input id="salary" type="number" min="0" step="1000" value="42000" />
+          </div>
+          <div>
+            <label for="payFrequency">Pay Frequency</label>
+            <select id="payFrequency">
+              <option value="26">Biweekly (26 paychecks)</option>
+              <option value="24">Twice monthly (24 paychecks)</option>
+              <option value="12">Monthly (12 paychecks)</option>
+            </select>
+          </div>
+        </div>
+        <div class="info-box" style="padding:18px; margin-top:18px;">
+          <strong>Scenario:</strong> You have just started a full-time job at Buckeye Manufacturing. The company offers a 401(k) plan and will match 100% of the first 4% you contribute.
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-secondary" onclick="showScreen(1)">Back</button>
+          <button class="btn btn-primary" onclick="goToContributions()">Continue</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen3" class="screen">
+      <div class="content-card">
+        <div class="step-header">
+          <div>
+            <div class="eyebrow">Contribution choices</div>
+            <h2>Choose contribution rate and tax treatment</h2>
+          </div>
+          <div class="step-indicator">Step 2 of 4</div>
+        </div>
+        <div class="progress"><div class="progress-bar" style="width:50%"></div></div>
+
+        <div class="grid-2">
+          <div class="slider-wrap">
+            <label for="contribution">Contribution Percentage</label>
+            <div class="range-value"><span id="contributionDisplay">6</span>%</div>
+            <input id="contribution" type="range" min="0" max="15" step="1" value="6" oninput="updateContributionPreview()" />
+            <p class="muted">Tip: Contributing at least 4% earns the full employer match in this plan.</p>
+          </div>
+          <div>
+            <div class="choice-row">
+              <div class="choice-card selected" id="traditionalCard" onclick="setTaxType('Traditional')">
+                <h3>Traditional 401(k)</h3>
+                <p>Contributions go in before taxes. Taxes are typically paid later when money is withdrawn in retirement.</p>
+              </div>
+              <div class="choice-card" id="rothCard" onclick="setTaxType('Roth')">
+                <h3>Roth 401(k)</h3>
+                <p>Contributions are made after taxes. Qualified withdrawals in retirement are generally tax-free.</p>
+              </div>
+            </div>
+            <div class="metric-grid">
+              <div class="metric-card">
+                <div class="label">Per Paycheck</div>
+                <div class="value" id="perPaycheck">$97</div>
+              </div>
+              <div class="metric-card">
+                <div class="label">Employer Match / Year</div>
+                <div class="value" id="matchValue">$1,680</div>
+              </div>
+              <div class="metric-card">
+                <div class="label">Total Added / Year</div>
+                <div class="value" id="totalYearlyValue">$4,200</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="matchMessage" class="status-box good"></div>
+
+        <div class="btn-row">
+          <button class="btn btn-secondary" onclick="showScreen(2)">Back</button>
+          <button class="btn btn-primary" onclick="showScreen(4)">Continue</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen4" class="screen">
+      <div class="content-card">
+        <div class="step-header">
+          <div>
+            <div class="eyebrow">Investment menu</div>
+            <h2>Select how contributions will be invested</h2>
+          </div>
+          <div class="step-indicator">Step 3 of 4</div>
+        </div>
+        <div class="progress"><div class="progress-bar" style="width:75%"></div></div>
+
+        <p class="muted">Enter percentages that add to 100. Students can discuss whether their mix fits a younger worker with a long time until retirement.</p>
+
+        <div class="fund-list">
+          <div class="fund-card">
+            <div class="fund-card-top">
+              <div>
+                <h3>U.S. Stock Index Fund</h3>
+                <p>Broad ownership of large U.S. companies. Higher growth potential, but values can rise and fall.</p>
+              </div>
+              <div class="alloc-wrap">
+                <label for="usStock">Allocation %</label>
+                <input id="usStock" type="number" min="0" max="100" value="50" oninput="updateAllocationStatus()" />
+              </div>
+            </div>
+          </div>
+
+          <div class="fund-card">
+            <div class="fund-card-top">
+              <div>
+                <h3>International Stock Fund</h3>
+                <p>Companies outside the United States. Adds diversification across different countries and markets.</p>
+              </div>
+              <div class="alloc-wrap">
+                <label for="intlStock">Allocation %</label>
+                <input id="intlStock" type="number" min="0" max="100" value="20" oninput="updateAllocationStatus()" />
+              </div>
+            </div>
+          </div>
+
+          <div class="fund-card">
+            <div class="fund-card-top">
+              <div>
+                <h3>Bond Index Fund</h3>
+                <p>Generally lower growth potential than stocks, but often less volatile. Can help reduce overall risk.</p>
+              </div>
+              <div class="alloc-wrap">
+                <label for="bond">Allocation %</label>
+                <input id="bond" type="number" min="0" max="100" value="20" oninput="updateAllocationStatus()" />
+              </div>
+            </div>
+          </div>
+
+          <div class="fund-card">
+            <div class="fund-card-top">
+              <div>
+                <h3>Target Date 2065 Fund</h3>
+                <p>An all-in-one fund that automatically shifts to a more conservative mix over time.</p>
+              </div>
+              <div class="alloc-wrap">
+                <label for="targetDate">Allocation %</label>
+                <input id="targetDate" type="number" min="0" max="100" value="10" oninput="updateAllocationStatus()" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="allocationBox" class="status-box"></div>
+        <div id="diversificationBox" class="score-box status-box"></div>
+
+        <div class="btn-row">
+          <button class="btn btn-secondary" onclick="showScreen(3)">Back</button>
+          <button class="btn btn-primary" onclick="finishEnrollment()">Review Summary</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen5" class="screen">
+      <div class="content-card">
+        <div class="step-header">
+          <div>
+            <div class="eyebrow">Enrollment summary</div>
+            <h2>Review your decisions</h2>
+          </div>
+          <div class="step-indicator">Step 4 of 4</div>
+        </div>
+        <div class="progress"><div class="progress-bar" style="width:100%"></div></div>
+
+        <div class="summary-layout">
+          <div class="summary-box">
+            <h3>Employee Elections</h3>
+            <table class="summary-table">
+              <tr><td>Name</td><td id="sumName">—</td></tr>
+              <tr><td>Current Age</td><td id="sumAge">—</td></tr>
+              <tr><td>Annual Salary</td><td id="sumSalary">—</td></tr>
+              <tr><td>Contribution Rate</td><td id="sumContribution">—</td></tr>
+              <tr><td>Tax Type</td><td id="sumTaxType">—</td></tr>
+              <tr><td>Employee Contribution / Year</td><td id="sumEmployeeAnnual">—</td></tr>
+              <tr><td>Employer Match / Year</td><td id="sumEmployerAnnual">—</td></tr>
+              <tr><td>Total Invested / Year</td><td id="sumTotalAnnual">—</td></tr>
+              <tr><td>Per Paycheck</td><td id="sumPerPaycheck">—</td></tr>
+            </table>
+
+            <h3 style="margin-top:26px;">Investment Allocation</h3>
+            <table class="summary-table">
+              <tr><td>U.S. Stock Index Fund</td><td id="sumUS">—</td></tr>
+              <tr><td>International Stock Fund</td><td id="sumIntl">—</td></tr>
+              <tr><td>Bond Index Fund</td><td id="sumBond">—</td></tr>
+              <tr><td>Target Date 2065 Fund</td><td id="sumTarget">—</td></tr>
+            </table>
+          </div>
+
+          <div>
+            <div class="summary-box">
+              <div class="small-note">Estimated account value by age 65</div>
+              <div class="big-value" id="futureValue">$0</div>
+              <p class="small-note">This estimate assumes the same annual contribution continues each year and uses a simplified long-term growth assumption of 7% annually. It is for classroom learning only.</p>
+            </div>
+
+            <div class="summary-box" style="margin-top:20px;">
+              <h3>Portfolio Feedback</h3>
+              <div id="summaryFeedback" class="status-box" style="margin-top:10px;"></div>
+              <p class="print-note"><strong>Reflection idea:</strong> Explain why this portfolio is or is not a good fit for a young worker just starting to invest for retirement.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-secondary" onclick="showScreen(4)">Back</button>
+          <button class="btn btn-secondary" onclick="window.print()">Print Summary</button>
+          <button class="btn btn-primary" onclick="restartSimulation()">Start Over</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    let taxType = 'Traditional';
+
+    function currency(value) {
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
+    }
+
+    function showScreen(num) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('screen' + num).classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (num === 3) updateContributionPreview();
+      if (num === 4) updateAllocationStatus();
+    }
+
+    function goToContributions() {
+      const name = document.getElementById('name').value.trim();
+      const age = Number(document.getElementById('age').value);
+      const salary = Number(document.getElementById('salary').value);
+      if (!name) { alert('Please enter an employee name.'); return; }
+      if (!age || age < 18) { alert('Please enter a valid age.'); return; }
+      if (!salary || salary <= 0) { alert('Please enter a valid annual salary.'); return; }
+      showScreen(3);
+    }
+
+    function setTaxType(type) {
+      taxType = type;
+      document.getElementById('traditionalCard').classList.toggle('selected', type === 'Traditional');
+      document.getElementById('rothCard').classList.toggle('selected', type === 'Roth');
+    }
+
+    function getContributionData() {
+      const salary = Number(document.getElementById('salary').value) || 0;
+      const paychecks = Number(document.getElementById('payFrequency').value) || 26;
+      const pct = Number(document.getElementById('contribution').value) || 0;
+      const employeeAnnual = salary * (pct / 100);
+      const employerAnnual = salary * (Math.min(pct, 4) / 100);
+      const totalAnnual = employeeAnnual + employerAnnual;
+      const perPaycheck = employeeAnnual / paychecks;
+      return { salary, paychecks, pct, employeeAnnual, employerAnnual, totalAnnual, perPaycheck };
+    }
+
+    function updateContributionPreview() {
+      const data = getContributionData();
+      document.getElementById('contributionDisplay').textContent = data.pct;
+      document.getElementById('perPaycheck').textContent = currency(data.perPaycheck);
+      document.getElementById('matchValue').textContent = currency(data.employerAnnual);
+      document.getElementById('totalYearlyValue').textContent = currency(data.totalAnnual);
+
+      const msg = document.getElementById('matchMessage');
+      if (data.pct === 0) {
+        msg.className = 'status-box bad';
+        msg.innerHTML = '<strong>No contribution selected.</strong> The employee would not receive any employer match and would miss the chance to start investing early.';
+      } else if (data.pct < 4) {
+        msg.className = 'status-box warn';
+        msg.innerHTML = '<strong>Partial employer match.</strong> This contribution earns some employer match, but not the full amount. Increasing to 4% would capture the entire company match.';
+      } else {
+        msg.className = 'status-box good';
+        msg.innerHTML = '<strong>Full employer match earned.</strong> Contributing at least 4% captures the full company match available in this plan.';
+      }
+    }
+
+    function getAllocationData() {
+      const us = Number(document.getElementById('usStock').value) || 0;
+      const intl = Number(document.getElementById('intlStock').value) || 0;
+      const bond = Number(document.getElementById('bond').value) || 0;
+      const target = Number(document.getElementById('targetDate').value) || 0;
+      const total = us + intl + bond + target;
+      return { us, intl, bond, target, total };
+    }
+
+    function updateAllocationStatus() {
+      const a = getAllocationData();
+      const allocBox = document.getElementById('allocationBox');
+      const divBox = document.getElementById('diversificationBox');
+
+      if (a.total < 100) {
+        allocBox.className = 'status-box warn';
+        allocBox.innerHTML = `<strong>Total allocation: ${a.total}%.</strong> Add ${100 - a.total}% more so the full contribution is invested.`;
+      } else if (a.total > 100) {
+        allocBox.className = 'status-box bad';
+        allocBox.innerHTML = `<strong>Total allocation: ${a.total}%.</strong> Reduce allocations by ${a.total - 100}% so the total equals 100%.`;
+      } else {
+        allocBox.className = 'status-box good';
+        allocBox.innerHTML = '<strong>Total allocation: 100%.</strong> All of the employee’s contributions are assigned to investments.';
+      }
+
+      const stockTotal = a.us + a.intl;
+      let feedback = '';
+      let cls = 'status-box good';
+
+      if (a.target === 100) {
+        feedback = '<strong>Diversification note:</strong> A target date fund can be a simple all-in-one choice for a beginner because it usually already holds a diversified mix internally.';
+      } else if (stockTotal === 0 && a.target === 0) {
+        cls = 'status-box bad';
+        feedback = '<strong>Diversification note:</strong> This portfolio has no stock exposure. For a younger worker with decades until retirement, that may be too conservative for long-term growth.';
+      } else if (a.us >= 90 || a.bond >= 90 || a.target >= 90) {
+        cls = 'status-box warn';
+        feedback = '<strong>Diversification note:</strong> This portfolio is heavily concentrated in one area. Students should consider whether spreading money across more than one type of investment would reduce risk.';
+      } else if (stockTotal >= 60 && stockTotal <= 90 && a.bond <= 30) {
+        feedback = '<strong>Diversification note:</strong> This looks reasonably growth-focused for a younger worker, while still including some diversification.';
+      } else {
+        cls = 'status-box warn';
+        feedback = '<strong>Diversification note:</strong> This portfolio may be acceptable, but students should be prepared to explain why this mix fits the employee’s age and time horizon.';
+      }
+
+      divBox.className = cls;
+      divBox.innerHTML = feedback;
+    }
+
+    function finishEnrollment() {
+      const a = getAllocationData();
+      if (a.total !== 100) {
+        alert('Investment allocations must total exactly 100% before continuing.');
+        return;
+      }
+
+      const name = document.getElementById('name').value.trim();
+      const age = Number(document.getElementById('age').value);
+      const contribution = getContributionData();
+      const years = Math.max(0, 65 - age);
+      const rate = 0.07;
+      const fv = contribution.totalAnnual > 0 && years > 0
+        ? contribution.totalAnnual * (((Math.pow(1 + rate, years) - 1) / rate))
+        : contribution.totalAnnual;
+
+      document.getElementById('sumName').textContent = name;
+      document.getElementById('sumAge').textContent = age;
+      document.getElementById('sumSalary').textContent = currency(contribution.salary);
+      document.getElementById('sumContribution').textContent = contribution.pct + '%';
+      document.getElementById('sumTaxType').textContent = taxType;
+      document.getElementById('sumEmployeeAnnual').textContent = currency(contribution.employeeAnnual);
+      document.getElementById('sumEmployerAnnual').textContent = currency(contribution.employerAnnual);
+      document.getElementById('sumTotalAnnual').textContent = currency(contribution.totalAnnual);
+      document.getElementById('sumPerPaycheck').textContent = currency(contribution.perPaycheck);
+      document.getElementById('sumUS').textContent = a.us + '%';
+      document.getElementById('sumIntl').textContent = a.intl + '%';
+      document.getElementById('sumBond').textContent = a.bond + '%';
+      document.getElementById('sumTarget').textContent = a.target + '%';
+      document.getElementById('futureValue').textContent = currency(fv);
+
+      const summaryFeedback = document.getElementById('summaryFeedback');
+      summaryFeedback.className = document.getElementById('diversificationBox').className;
+      summaryFeedback.innerHTML = document.getElementById('diversificationBox').innerHTML;
+
+      showScreen(5);
+    }
+
+    function restartSimulation() {
+      document.getElementById('name').value = '';
+      document.getElementById('age').value = 22;
+      document.getElementById('salary').value = 42000;
+      document.getElementById('payFrequency').value = 26;
+      document.getElementById('contribution').value = 6;
+      setTaxType('Traditional');
+      document.getElementById('usStock').value = 50;
+      document.getElementById('intlStock').value = 20;
+      document.getElementById('bond').value = 20;
+      document.getElementById('targetDate').value = 10;
+      updateContributionPreview();
+      updateAllocationStatus();
+      showScreen(1);
+    }
+
+    updateContributionPreview();
+    updateAllocationStatus();
+  </script>
+</body>
+</html>
